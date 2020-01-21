@@ -9,7 +9,6 @@ import cheerio from 'cheerio';
 import { EventEmitter } from "events";
 const RSAKey = require("../js/rsa/rsa");
 
-
 type YealinkProperty = 'status'
   | 'status-wifi' | 'account-register' | 'account-basic' | 'account-codec' | 'account-adv'
   | 'network' | 'network-pcport' | 'network-nat' | 'network-adv' | 'network-wifi' | 'network-diagnosis'
@@ -410,3 +409,5 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     this.server.close();
   }
 }
+
+export default Yealink;

@@ -1,33 +1,37 @@
 {
-  "name": "@u4/yealink",
+  "name": "yealink",
   "version": "0.0.1",
   "description": "control yealink phone with nodejs",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -p .",
+    "watch": "tsc --watch -p .",
+    "prepare": "npm run build"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/UrielCh/yealink.git"
   },
   "author": "Chemouni Uriel",
-  "license": "GPL v3",
+  "license": "GPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/UrielCh/yealink/issues"
   },
   "homepage": "https://github.com/UrielCh/yealink#readme",
   "devDependencies": {
-    "@types/cheerio": "^0.22.13",
+    "@types/cheerio": "^0.22.15",
     "@types/crypto-js": "^3.1.43",
-    "@types/node": "^12.7.12",
-    "@types/request": "^2.48.3",
-    "@types/request-promise": "^4.1.44",
-    "typescript": "^3.6.4"
+    "@types/node": "^13.1.8",
+    "@types/request": "^2.48.4",
+    "@types/request-promise": "^4.1.45",
+    "typescript": "^3.7.5"
   },
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
     "crypto-js": "^3.1.9-1",
     "request": "^2.88.0",
-    "request-promise": "^4.2.4"
-  }
+    "request-promise": "^4.2.5"
+  },
+  "files": ["dist", "js"]
+
 }
