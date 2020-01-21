@@ -4,6 +4,11 @@
   "description": "control yealink phone with nodejs",
   "main": "./dist/Yealink.js",
   "types": "./dist/Yealink.d.ts",
+  "keywords": [
+    "yealink",
+    "voip",
+    "automation"
+  ],
   "scripts": {
     "build": "tsc -p .",
     "watch": "tsc --watch -p .",
