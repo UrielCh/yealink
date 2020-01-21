@@ -2,7 +2,8 @@
   "name": "yealink",
   "version": "0.0.1",
   "description": "control yealink phone with nodejs",
-  "main": "index.js",
+  "main": "./dist/Yealink.js",
+  "types": "./dist/Yealink.d.ts",
   "scripts": {
     "build": "tsc -p .",
     "watch": "tsc --watch -p .",
