@@ -7,6 +7,11 @@ import CryptoJS from "crypto-js";
 import YealinkKey from "./YealinkKey";
 import cheerio from 'cheerio';
 import { EventEmitter } from "events";
+import YealinkVariable from "./YealintVariable";
+import YealinkEvents from './YealinkEvents';
+import os from 'os';
+import IPCIDR from 'ip-cidr';
+
 const RSAKey = require("../js/rsa/rsa");
 
 type YealinkProperty = 'status'
@@ -19,9 +24,25 @@ type YealinkProperty = 'status'
   | 'contactsbasic' | 'contacts-remote' | 'contacts-callinfo' | 'contacts-google' | 'contacts-LDAP' | 'contacts-multicastIP' | 'contacts-favorite'
   | 'security' | 'trusted-cert' | 'server-cert';
 
-type YealinkEvents = "AUSetupCompleted" | "AULogOn" | "AULogOff" | "AURegisterFailed" | "AUOffHook" | "AUOnHook" | "AUIncomingCall" | "AUCallOut" | "AUEstablished" | "AUTerminated" | "AUOpenDnd" | "AUCloseDnd" | "AUOpenAlwaysForward" | "AUCloseAlwaysForward" | "AUOpenBusyForward" | "AUCloseBusyForward"
-   | "AUOpenNoAnswerForward" | "AUCloseNoAnswerForward" | "AUTransferCall" | "AUBlindTransfer" | "AUAttendedTransfer" | "AUHold" | "AUUnHold" | "AURemoteHold" | "AURemoteUnHold" | "AUMute" | "AUUnMute" | "AUMissedCall" | "AUIpChanged" | "AUBusyToIdle" | "AUIdleToBusy" | "AURejectIncomingCall"
-   | "AUAnswerNewInCall" | "AUTransferFailed" | "AUTransferFinished" | "AUForwardIncomingCall" | "AUUCServer" | "AURemoteIP" | "AUAutopFinish" | "AUOpenCallWait" | "AUCloseCallWait" | "AUHeadSet" | "AUHandFree" | "AUCancelCallOut" | "AURemoteBusy" | "AUCallRemoteCanceled" | "AUPeripheralInformation";
+export type EventParams = { [key in YealinkVariable]: string };
+/**
+ * @param dest find a local IP on the same range that the destination.
+ */
+function getlocalIP(dest: string): string {
+  const nets = os.networkInterfaces();
+  let validIp = '';
+  Object.values(nets).forEach(elements => {
+    elements.forEach(element => {
+      const { cidr, address } = element;
+      if (!cidr || !address)
+        return;
+      const block = new IPCIDR(cidr);
+      if (block.contains(dest))
+        validIp = address;
+    })
+  });
+  return validIp;
+}
 
 function getresultinfo(body: string) {
   var index = body.indexOf('<div id="_RES_INFO_"');
@@ -50,23 +71,23 @@ const getBodyVar = (body: string, name: string) => {
   return "";
 };
 
-type YealinkEventEmitterListener = (arg: http.IncomingMessage) => void;
+// type YealinkEventEmitterListener = (arg: http.IncomingMessage) => void;
 
 export interface YealinkEventEmitter {
-  addListener(event: YealinkEvents, listener: (arg: http.IncomingMessage) => void): this;
-  on(event: YealinkEvents, listener: (args: http.IncomingMessage) => void): this;
-  once(event: YealinkEvents, listener: (args: http.IncomingMessage) => void): this;
-  prependListener(event: YealinkEvents, listener: (args: http.IncomingMessage) => void): this;
-  prependOnceListener(event: YealinkEvents, listener: (args: http.IncomingMessage) => void): this;
-  removeListener(event: YealinkEvents, listener: (args: http.IncomingMessage) => void): this;
-  off(event: YealinkEvents, listener: (args: http.IncomingMessage) => void): this;
+  addListener(event: YealinkEvents, listener: (params: EventParams) => void): this;
+  on(event: YealinkEvents, listener: (params: EventParams) => void): this;
+  once(event: YealinkEvents, listener: (params: EventParams) => void): this;
+  prependListener(event: YealinkEvents, listener: (params: EventParams) => void): this;
+  prependOnceListener(event: YealinkEvents, listener: (params: EventParams) => void): this;
+  removeListener(event: YealinkEvents, listener: (params: EventParams) => void): this;
+  off(event: YealinkEvents, listener: (params: EventParams) => void): this;
   removeAllListeners(event?: YealinkEvents): this;
   listeners(event: YealinkEvents): Function[];
   rawListeners(event: YealinkEvents): Function[];
   emit(event: YealinkEvents, ...args: any[]): boolean;
   listenerCount(type: YealinkEvents): number;
 
-  on(event: 'all', listener: (ev: YealinkEvents, req: http.IncomingMessage) => void): this;
+  on(event: 'all', listener: (ev: YealinkEvents, params: EventParams) => void): this;
 }
 
 /**
@@ -74,7 +95,7 @@ export interface YealinkEventEmitter {
  */
 export class Yealink extends EventEmitter implements YealinkEventEmitter {
   private ip: string;
-  private myIp: string;
+  private myIp_cache: string;
   private auth: AuthOptions;
   // private localId: string;
   private jar: CookieJar;
@@ -102,10 +123,10 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
    */
   private server: Server;
 
-  constructor(ip: string, user: string, pass: string, myIp: string) {
+  constructor(ip: string, user: string, pass: string, myIp?: string) {
     super();
     this.ip = ip;
-    this.myIp = myIp;
+    this.myIp_cache = myIp || '';
     this.auth = { user, pass };
     this.theCookie = "";
     const yealink = this;
@@ -118,13 +139,29 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
       getCookieString: (uri: string | Url): string => yealink.theCookie,
       getCookies: (uri: string | Url): Cookie[] => []
     };
-    this.server = http.createServer((req, resp) => {
-      const event: string = (req.url as string).substring(1);
-      this.emit('all', event, req);
-      this.emit(event, req);
+    this.server = http.createServer((req: http.IncomingMessage, resp: http.ServerResponse) => {
+      const { url } = req;
+      if (!url) {
+        resp.end('500');
+        return;
+      }
+      const parsed = new URL(url, 'http://0.0.0.0');
+      const data = {} as { [key in YealinkVariable]: string };
+      parsed.searchParams.forEach((value: string, key: string, parent: URLSearchParams) => {
+        data[key as YealinkVariable] = value;
+      });
+      const event = parsed.pathname.substring(1);
+      this.emit('all', event, data);
+      this.emit(event, data);
       resp.end("OK");
     });
   }
+
+  //  on(event: YealinkEvents, listener: (args: any) => void): this;
+  //  on(event: "all", listener: (ev: YealinkEvents, req: any) => void): this;
+  //  on(event: any, listener: any) {
+  //    return super.on(event, listener);
+  //  }
 
   private InitEncrypt() {
     const rsa = new RSAKey();
@@ -349,11 +386,23 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     console.log("code:" + code);
   }
 
+
+  private getMyIp(): string {
+    const { myIp_cache } = this;
+    if (myIp_cache)
+      return myIp_cache;
+    const ip2 = getlocalIP(this.ip);
+    if (!ip2)
+      throw Error(`Failed to detect a local IP on the same network than ${this.ip}`);
+    this.myIp_cache = ip2;
+    return ip2;
+  }
+
   /**
    * allow IP to remote controle Phone
    */
   public async AllowIP(ips?: string) {
-    ips = ips || this.myIp;
+    ips = ips || this.getMyIp();
     let body = await this.loadServlet({ m: 'mod_data', p: 'features-remotecontrl' });
     const $ = cheerio.load(body);
     const inp = $('input[name="AURILimitIP"]')
@@ -384,13 +433,26 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
   /**
    * Register Event listener
    */
-  public async register(port: number) {
+  public async register(port: number, options?: { varaibles?: Set<YealinkVariable> | Array<YealinkVariable>, events?: Set<YealinkEvents> | Array<YealinkEvents> }) {
+    options = options || {};
     let body: string = await this.loadServlet({ m: "mod_data", p: "features-actionurl" })
     const $ = cheerio.load(body);
     let posts = $('[yltype="post"]').toArray();
     let names = posts.map(input => input.attribs['name'])
     let form: { [key: string]: string } = {}
-    names.forEach(n => form[n] = `http://${this.myIp}:${port}/${n}`);
+    const { varaibles, events } = options;
+    if (events) {
+      const events2 = new Set(events);
+      names = names.filter((name) => events2.has(name as YealinkEvents))
+    }
+
+    let params = ''
+    if (varaibles) {
+      const values = [...varaibles].map((v: YealinkVariable) => `${v}=$${v}`).join('&');
+      params = `?${values}`;
+    }
+    const myIp = this.getMyIp();
+    names.forEach(n => form[n] = `http://${myIp}:${port}/${n}${params}`);
     this.server.listen(port, () => console.log("liten to " + port));
     const ret = await this.writeServlet({ m: 'mod_data', p: "features-actionurl" }, form);
   }
