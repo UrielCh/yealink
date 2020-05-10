@@ -27,6 +27,8 @@
   "devDependencies": {
     "@types/cheerio": "^0.22.15",
     "@types/crypto-js": "^3.1.43",
+    "@types/ip-address": "^5.8.2",
+    "@types/jsbn": "^1.2.29",
     "@types/node": "^13.1.8",
     "@types/request": "^2.48.4",
     "@types/request-promise": "^4.1.45",
