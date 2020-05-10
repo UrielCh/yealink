@@ -25,6 +25,19 @@ type YealinkProperty = 'status'
   | 'security' | 'trusted-cert' | 'server-cert';
 
 export type EventParams = { [key in YealinkVariable]: string };
+
+interface RegisterOptionsExter {
+  external_url: string,
+  varaibles?: Set<YealinkVariable> | Array<YealinkVariable>,
+  events?: Set<YealinkEvents> | Array<YealinkEvents>
+}
+
+interface RegisterOptionsSelf {
+  port: number,
+  varaibles?: Set<YealinkVariable> | Array<YealinkVariable>,
+  events?: Set<YealinkEvents> | Array<YealinkEvents>
+}
+
 /**
  * @param dest find a local IP on the same range that the destination.
  */
@@ -32,6 +45,8 @@ function getlocalIP(dest: string): string {
   const nets = os.networkInterfaces();
   let validIp = '';
   Object.values(nets).forEach(elements => {
+    if (!elements)
+      return;
     elements.forEach(element => {
       const { cidr, address } = element;
       if (!cidr || !address)
@@ -433,8 +448,8 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
   /**
    * Register Event listener
    */
-  public async register(port: number, options?: { varaibles?: Set<YealinkVariable> | Array<YealinkVariable>, events?: Set<YealinkEvents> | Array<YealinkEvents> }) {
-    options = options || {};
+  public async register(options: RegisterOptionsExter | RegisterOptionsSelf) {
+    // options = options || {};
     let body: string = await this.loadServlet({ m: "mod_data", p: "features-actionurl" })
     const $ = cheerio.load(body);
     let posts = $('[yltype="post"]').toArray();
@@ -451,10 +466,22 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
       const values = [...varaibles].map((v: YealinkVariable) => `${v}=$${v}`).join('&');
       params = `?${values}`;
     }
-    const myIp = this.getMyIp();
-    names.forEach(n => form[n] = `http://${myIp}:${port}/${n}${params}`);
-    this.server.listen(port, () => console.log("liten to " + port));
-    const ret = await this.writeServlet({ m: 'mod_data', p: "features-actionurl" }, form);
+
+    const port = (options as RegisterOptionsSelf).port;
+    let external_url = (options as RegisterOptionsExter).external_url;
+    if (port) {
+      const myIp = this.getMyIp();
+      names.forEach(n => form[n] = `http://${myIp}:${port}/${n}${params}`);
+      this.server.listen(port, () => console.log("liten to " + port));
+    } else if (external_url) {
+      if (~external_url.indexOf('?')) {
+        external_url += '&'
+      } else  {
+        external_url += '?'
+      }
+      names.forEach(n => form[n] = `${external_url}ev=${n}${params}`);
+    }
+    await this.writeServlet({ m: 'mod_data', p: "features-actionurl" }, form);
   }
 
   /**
