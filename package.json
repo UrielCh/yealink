@@ -1,9 +1,9 @@
 {
   "name": "yealink",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "control yealink phone with nodejs",
-  "main": "./dist/Yealink.js",
-  "types": "./dist/Yealink.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "keywords": [
     "yealink",
     "voip",

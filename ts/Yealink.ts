@@ -464,14 +464,14 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     let params = ''
     if (varaibles) {
       const values = [...varaibles].map((v: YealinkVariable) => `${v}=$${v}`).join('&');
-      params = `?${values}`;
+      params = `${values}`;
     }
 
     const port = (options as RegisterOptionsSelf).port;
     let external_url = (options as RegisterOptionsExter).external_url;
     if (port) {
       const myIp = this.getMyIp();
-      names.forEach(n => form[n] = `http://${myIp}:${port}/${n}${params}`);
+      names.forEach(n => form[n] = `http://${myIp}:${port}/${n}?${params}`);
       this.server.listen(port, () => console.log("liten to " + port));
     } else if (external_url) {
       if (~external_url.indexOf('?')) {
@@ -479,7 +479,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
       } else  {
         external_url += '?'
       }
-      names.forEach(n => form[n] = `${external_url}ev=${n}${params}`);
+      names.forEach(n => form[n] = `${external_url}ev=${n}&${params}`);
     }
     await this.writeServlet({ m: 'mod_data', p: "features-actionurl" }, form);
   }
