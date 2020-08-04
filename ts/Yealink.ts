@@ -124,8 +124,8 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
   private objEncrypt = {
     rsa: "",
     key: "",
-    aes: { iv: <any>null, mode: <any>null, padding: <any>null },
-    data: { key: null, iv: null }
+    aes: { iv: '', mode: null as CryptoJS.Mode | null, padding: null as CryptoJS.Padding | null} as CryptoJS.CipherOption,
+    data: { key: '', iv: '' }
   };
 
   private accounts = {
@@ -137,7 +137,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
    * server used to recieve events
    */
   private server: Server;
-
+  private commonOption: rp.RequestPromiseOptions;
   constructor(ip: string, user: string, pass: string, myIp?: string) {
     super();
     this.ip = ip;
@@ -154,6 +154,12 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
       getCookieString: (uri: string | Url): string => yealink.theCookie,
       getCookies: (uri: string | Url): Cookie[] => []
     };
+
+    this.commonOption = {
+      rejectUnauthorized: false,
+      jar: this.jar,
+    }
+
     this.server = http.createServer((req: http.IncomingMessage, resp: http.ServerResponse) => {
       const { url } = req;
       if (!url) {
@@ -206,7 +212,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
   public async phonetype() {
     if (this._phonetype) return this._phonetype;
     const q = await rp(`http://${this.ip}/servlet`, {
-      jar: this.jar,
+      ...this.commonOption,
       qs: { m: "mod_listener", p: "login", q: "loginForm", jumpto: "status" }
     });
     this._phonetype = getBodyVar(q, "g_phonetype");
@@ -232,7 +238,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     let code = "";
     try {
       q = await rp({
-        jar,
+        ...this.commonOption,
         uri,
         method: "POST",
         form: { username, pwd, rsakey, rsaiv },
@@ -246,7 +252,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
       throw `Login request should return {"authstatus":"done"}`;
     try {
       q = await rp(`http://${this.ip}/servlet`, {
-        jar: this.jar,
+        ...this.commonOption,
         qs: { m: "mod_data", p: "status", q: "load" }
       });
     } catch (e) {
@@ -282,7 +288,8 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     await this.login();
     try {
       return await rp(`http://${this.ip}/servlet`, {
-        jar: this.jar, qs: { ...qs, q: 'load' }
+        ...this.commonOption,
+        qs: { ...qs, q: 'load' }
       });
     } catch (e) {
       return e;
@@ -294,8 +301,8 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     const form = { num: number, acc, type, token: this.g_strToken };
     try {
       const body = await rp(`http://${this.ip}/servlet?m=mod_account&p=call&q=dial`, {
+        ...this.commonOption,
         method: "POST",
-        jar: this.jar,
         form
       });
       const ret = getresultinfo(body);
@@ -313,8 +320,8 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     form = { ...form, token: this.g_strToken };
     try {
       const body = await rp(`http://${this.ip}/servlet`, {
+        ...this.commonOption,
         method: "POST",
-        jar: this.jar,
         qs: { ...qs, q: 'write' },
         form
       });
@@ -358,7 +365,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     }
     outgoing_uri = outgoing_uri.substring(0, outgoing_uri.length - 2);
     const q = await rp(`http://${this.ip}/servlet`, {
-      jar: this.jar,
+      ...this.commonOption,
       auth: this.auth,
       qs: { key: `number=${number}`, outgoing_uri }
     });
@@ -374,7 +381,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
       this.ip
       }/servlet?m=mod_account&p=call&q=hangup&Rajax=${Math.random()}`;
     let q = await rp({
-      jar,
+      ...this.commonOption,
       uri,
       method: "POST",
       form: { token: this.g_strToken },
@@ -392,8 +399,8 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
   public async press(key: YealinkKey) {
     const jar = this.jar;
     const q: string = await rp(`http://${this.ip}/cgi-bin/ConfigManApp.com`, {
+      ...this.commonOption,
       auth: this.auth,
-      jar,
       qs: { key }
     });
     const code = getresultinfo(q);
@@ -445,15 +452,23 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     return out;
   }
 
+  private getYltype(body: string): string[] {
+    const $ = cheerio.load(body);
+    let posts = $('[yltype="post"]').toArray();
+    let names = posts.map(input => input.attribs['name'])
+    // as raw string
+    // const matches = body.match(/yltype="post" name="[^"]+"/g) || [];
+    // let names = matches.map(m => { const m2 = m.match(/name="([^"]+)"/); return m2 ? m2[1] : ''; });
+    return names;
+  }
+
   /**
    * Register Event listener
    */
   public async register(options: RegisterOptionsExter | RegisterOptionsSelf) {
     // options = options || {};
     let body: string = await this.loadServlet({ m: "mod_data", p: "features-actionurl" })
-    const $ = cheerio.load(body);
-    let posts = $('[yltype="post"]').toArray();
-    let names = posts.map(input => input.attribs['name'])
+    let names = this.getYltype(body);
     let form: { [key: string]: string } = {}
     const { varaibles, events } = options;
     if (events) {
@@ -489,9 +504,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
    */
   public async unregister() {
     let body: string = await this.loadServlet({ m: "mod_data", p: "features-actionurl" })
-    const $ = cheerio.load(body);
-    let posts = $('[yltype="post"]').toArray();
-    let names = posts.map(input => input.attribs['name'])
+    let names = this.getYltype(body);
     let form: { [key: string]: string } = {} // token: this.g_strToken
     names.forEach(n => form[n] = '');
     const ret = await this.writeServlet({ m: 'mod_data', p: "features-actionurl" }, form);
