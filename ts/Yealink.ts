@@ -120,7 +120,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
   private _rsa_e = "";
   private account = "Account1";
   private g_strToken = "";
-
+  private schema: 'http' | 'https' = 'http';
   private objEncrypt = {
     rsa: "",
     key: "",
@@ -209,9 +209,19 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     return r.toString();
   }
 
+  public setSchema(schema: 'http'|'https') {
+    if (schema == 'http') {
+      this.schema = 'http';
+    } else if (schema == 'https') {
+      this.schema = 'https';
+    } else {
+      throw Error(`invalid schema ${schema} valid values are http, https`);
+    }
+  }
+
   public async phonetype() {
     if (this._phonetype) return this._phonetype;
-    const q = await rp(`http://${this.ip}/servlet`, {
+    const q = await rp(`${this.schema}://${this.ip}/servlet`, {
       ...this.commonOption,
       qs: { m: "mod_listener", p: "login", q: "loginForm", jumpto: "status" }
     });
@@ -225,7 +235,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     // RSA KEYS DATA MUST BE LOADED
     if (this.g_strToken) return;
     await this.phonetype();
-    let uri = `http://${
+    let uri = `${this.schema}://${
       this.ip
       }/servlet?m=mod_listener&p=login&q=login&Rajax=${Math.random()}`;
     this.InitEncrypt();
@@ -251,7 +261,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     if (code !== '{"authstatus":"done"}')
       throw `Login request should return {"authstatus":"done"}`;
     try {
-      q = await rp(`http://${this.ip}/servlet`, {
+      q = await rp(`${this.schema}://${this.ip}/servlet`, {
         ...this.commonOption,
         qs: { m: "mod_data", p: "status", q: "load" }
       });
@@ -287,7 +297,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
   private async loadServlet(qs: { m: 'mod_data', p: YealinkProperty }): Promise<string> {
     await this.login();
     try {
-      return await rp(`http://${this.ip}/servlet`, {
+      return await rp(`${this.schema}://${this.ip}/servlet`, {
         ...this.commonOption,
         qs: { ...qs, q: 'load' }
       });
@@ -300,7 +310,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     await this.login();
     const form = { num: number, acc, type, token: this.g_strToken };
     try {
-      const body = await rp(`http://${this.ip}/servlet?m=mod_account&p=call&q=dial`, {
+      const body = await rp(`${this.schema}://${this.ip}/servlet?m=mod_account&p=call&q=dial`, {
         ...this.commonOption,
         method: "POST",
         form
@@ -319,7 +329,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     await this.login();
     form = { ...form, token: this.g_strToken };
     try {
-      const body = await rp(`http://${this.ip}/servlet`, {
+      const body = await rp(`${this.schema}://${this.ip}/servlet`, {
         ...this.commonOption,
         method: "POST",
         qs: { ...qs, q: 'write' },
@@ -364,7 +374,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
       throw `account ${this.account} is not registed`;
     }
     outgoing_uri = outgoing_uri.substring(0, outgoing_uri.length - 2);
-    const q = await rp(`http://${this.ip}/servlet`, {
+    const q = await rp(`${this.schema}://${this.ip}/servlet`, {
       ...this.commonOption,
       auth: this.auth,
       qs: { key: `number=${number}`, outgoing_uri }
@@ -377,9 +387,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
   public async hangup() {
     await this.login();
     const jar = this.jar;
-    let uri = `http://${
-      this.ip
-      }/servlet?m=mod_account&p=call&q=hangup&Rajax=${Math.random()}`;
+    let uri = `${this.schema}://${this.ip}/servlet?m=mod_account&p=call&q=hangup&Rajax=${Math.random()}`;
     let q = await rp({
       ...this.commonOption,
       uri,
@@ -398,7 +406,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
    */
   public async press(key: YealinkKey) {
     const jar = this.jar;
-    const q: string = await rp(`http://${this.ip}/cgi-bin/ConfigManApp.com`, {
+    const q: string = await rp(`${this.schema}://${this.ip}/cgi-bin/ConfigManApp.com`, {
       ...this.commonOption,
       auth: this.auth,
       qs: { key }
@@ -486,7 +494,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     let external_url = (options as RegisterOptionsExter).external_url;
     if (port) {
       const myIp = this.getMyIp();
-      names.forEach(n => form[n] = `http://${myIp}:${port}/${n}?${params}`);
+      names.forEach(n => form[n] = `${this.schema}://${myIp}:${port}/${n}?${params}`);
       this.server.listen(port, () => console.log("liten to " + port));
     } else if (external_url) {
       if (~external_url.indexOf('?')) {

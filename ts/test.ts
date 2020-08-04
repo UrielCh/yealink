@@ -3,6 +3,7 @@ import YealinkVariable from "./YealintVariable";
 
 async function main () {
     const yl = new Yealink('10.0.0.76', 'admin', 'admin');
+    yl.setSchema('https');
     await yl.login();
     const accs = await yl.getAccounts();
     console.log(accs);
