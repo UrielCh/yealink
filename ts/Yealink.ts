@@ -113,7 +113,6 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
   private myIp_cache: string;
   private auth: AuthOptions;
   // private localId: string;
-  private jar: CookieJar;
   private theCookie: string;
   private _phonetype = "";
   private _rsa_n = "";
@@ -145,7 +144,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     this.auth = { user, pass };
     this.theCookie = "";
     const yealink = this;
-    this.jar = {
+    const jar: CookieJar = {
       setCookie: (
         cookieOrStr: Cookie | string,
         uri: string | Url,
@@ -157,7 +156,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
 
     this.commonOption = {
       rejectUnauthorized: false,
-      jar: this.jar,
+      jar,
     }
 
     this.server = http.createServer((req: http.IncomingMessage, resp: http.ServerResponse) => {
@@ -241,9 +240,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     this.InitEncrypt();
     const username = this.auth.user;
     const pwd = this.Encrypt(this.auth.pass as string);
-    const rsakey = this.objEncrypt.data.key;
-    const rsaiv = this.objEncrypt.data.iv;
-    const jar = this.jar;
+    const {key, iv} = this.objEncrypt.data;
     let q = "";
     let code = "";
     try {
@@ -251,7 +248,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
         ...this.commonOption,
         uri,
         method: "POST",
-        form: { username, pwd, rsakey, rsaiv },
+        form: { username, pwd, rsakey: key, rsaiv: iv },
         headers: {}
       });
     } catch (e) {
@@ -386,7 +383,6 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
 
   public async hangup() {
     await this.login();
-    const jar = this.jar;
     let uri = `${this.schema}://${this.ip}/servlet?m=mod_account&p=call&q=hangup&Rajax=${Math.random()}`;
     let q = await rp({
       ...this.commonOption,
@@ -405,7 +401,6 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
    * is for Old T2X(T28P, T26P, T22P, T21P, T20P and T19P)which version is V70.
    */
   public async press(key: YealinkKey) {
-    const jar = this.jar;
     const q: string = await rp(`${this.schema}://${this.ip}/cgi-bin/ConfigManApp.com`, {
       ...this.commonOption,
       auth: this.auth,
@@ -413,7 +408,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     });
     const code = getresultinfo(q);
     if (!code) return;
-    console.log("code:" + code);
+    console.log(`code: ${code}`);
   }
 
 
@@ -494,8 +489,8 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     let external_url = (options as RegisterOptionsExter).external_url;
     if (port) {
       const myIp = this.getMyIp();
-      names.forEach(n => form[n] = `${this.schema}://${myIp}:${port}/${n}?${params}`);
-      this.server.listen(port, () => console.log("liten to " + port));
+      names.forEach(n => form[n] = `http://${myIp}:${port}/${n}?${params}`);
+      this.server.listen(port, () => console.log(`litening port ${port}`));
     } else if (external_url) {
       if (~external_url.indexOf('?')) {
         external_url += '&'
