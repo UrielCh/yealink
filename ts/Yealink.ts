@@ -430,7 +430,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     ips = ips || this.getMyIp();
     let body = await this.loadServlet({ m: 'mod_data', p: 'features-remotecontrl' });
     const $ = cheerio.load(body);
-    const inp = $('input[name="AURILimitIP"]')
+    const inp = $('input[name="AURILimitIP"]').toArray() as cheerio.TagElement[];
     if (!inp.length)
       throw Error('loading Page Error AURILimitIP not found');
     const value = inp[0].attribs['value'];
@@ -457,8 +457,8 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
 
   private getYltype(body: string): string[] {
     const $ = cheerio.load(body);
-    let posts = $('[yltype="post"]').toArray();
-    let names = posts.map(input => input.attribs['name'])
+    let posts = $('[yltype="post"]').toArray() as cheerio.TagElement[];
+    let names = posts.map((input) => input.attribs['name'])
     // as raw string
     // const matches = body.match(/yltype="post" name="[^"]+"/g) || [];
     // let names = matches.map(m => { const m2 = m.match(/name="([^"]+)"/); return m2 ? m2[1] : ''; });

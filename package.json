@@ -1,49 +1,49 @@
 {
-  "name": "yealink",
-  "version": "0.1.2",
-  "description": "control yealink phone with nodejs",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "keywords": [
-    "yealink",
-    "voip",
-    "automation"
-  ],
-  "scripts": {
-    "build": "tsc -p .",
-    "watch": "tsc --watch -p .",
-    "prepare": "npm run build"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/UrielCh/yealink.git"
-  },
-  "author": "Chemouni Uriel",
-  "license": "GPL-3.0-or-later",
-  "bugs": {
-    "url": "https://github.com/UrielCh/yealink/issues"
-  },
-  "homepage": "https://github.com/UrielCh/yealink#readme",
-  "devDependencies": {
-    "@types/cheerio": "^0.22.21",
-    "@types/crypto-js": "^3.1.47",
-    "@types/ip-address": "^5.8.2",
-    "@types/jsbn": "^1.2.29",
-    "@types/node": "^14.0.27",
-    "@types/request": "^2.48.5",
-    "@types/request-promise": "^4.1.46",
-    "typescript": "^3.9.7"
-  },
-  "dependencies": {
-    "cheerio": "^1.0.0-rc.3",
-    "crypto-js": "^4.0.0",
-    "get-random-values": "^1.2.0",
-    "ip-cidr": "^2.0.17",
-    "request": "^2.88.2",
-    "request-promise": "^4.2.6"
-  },
-  "files": [
-    "dist",
-    "js"
-  ]
+    "name": "yealink",
+    "version": "0.1.2",
+    "description": "control yealink phone with nodejs",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "keywords": [
+        "yealink",
+        "voip",
+        "automation"
+    ],
+    "scripts": {
+        "build": "tsc -p .",
+        "watch": "tsc --watch -p .",
+        "prepare": "npm run build"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/UrielCh/yealink.git"
+    },
+    "author": "Chemouni Uriel",
+    "license": "GPL-3.0-or-later",
+    "bugs": {
+        "url": "https://github.com/UrielCh/yealink/issues"
+    },
+    "homepage": "https://github.com/UrielCh/yealink#readme",
+    "devDependencies": {
+        "@types/cheerio": "^0.22.24",
+        "@types/crypto-js": "^3.1.47",
+        "@types/ip-address": "^6.0.0",
+        "@types/jsbn": "^1.2.29",
+        "@types/node": "^14.14.27",
+        "@types/request": "^2.48.5",
+        "@types/request-promise": "^4.1.47",
+        "typescript": "^4.1.5"
+    },
+    "dependencies": {
+        "cheerio": "^1.0.0-rc.5",
+        "crypto-js": "^4.0.0",
+        "get-random-values": "^1.2.2",
+        "ip-cidr": "^2.1.1",
+        "request": "^2.88.2",
+        "request-promise": "^4.2.6"
+    },
+    "files": [
+        "dist",
+        "js"
+    ]
 }
