@@ -426,7 +426,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
   /**
    * allow IP to remote controle Phone
    */
-  public async AllowIP(ips?: string) {
+  public async AllowIP(ips?: string): Promise<boolean> {
     ips = ips || this.getMyIp();
     let body = await this.loadServlet({ m: 'mod_data', p: 'features-remotecontrl' });
     const $ = cheerio.load(body);
@@ -434,9 +434,11 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     if (!inp.length)
       throw Error('loading Page Error AURILimitIP not found');
     const value = inp[0].attribs['value'];
-    if (value !== ips) {
+    if (value === ips) {
+      return false;
     }
     await this.writeServlet({ m: "mod_data", p: 'features-remotecontrl' }, { AURILimitIP: ips });
+    return true;
   }
 
   /**
