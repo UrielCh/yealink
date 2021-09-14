@@ -28,13 +28,13 @@ export type EventParams = { [key in YealinkVariable]: string };
 
 interface RegisterOptionsExter {
   external_url: string,
-  varaibles?: Set<YealinkVariable> | Array<YealinkVariable>,
+  variables?: Set<YealinkVariable> | Array<YealinkVariable>,
   events?: Set<YealinkEvents> | Array<YealinkEvents>
 }
 
 interface RegisterOptionsSelf {
   port: number,
-  varaibles?: Set<YealinkVariable> | Array<YealinkVariable>,
+  variables?: Set<YealinkVariable> | Array<YealinkVariable>,
   events?: Set<YealinkEvents> | Array<YealinkEvents>
 }
 
@@ -252,7 +252,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
         headers: {}
       });
     } catch (e) {
-      code = e;
+      code = `${e}`;
     }
     code = getresultinfo(q);
     if (code !== '{"authstatus":"done"}')
@@ -263,7 +263,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
         qs: { m: "mod_data", p: "status", q: "load" }
       });
     } catch (e) {
-      code = e;
+      code = `${e}`;
     }
     code = getresultinfo(q);
     const g_dataAccStatus = q.match(
@@ -299,7 +299,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
         qs: { ...qs, q: 'load' }
       });
     } catch (e) {
-      return e;
+      throw e;
     }
   }
 
@@ -318,7 +318,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
       }
       return ret; // '1' => ok '0' => ko
     } catch (e) {
-      return e;
+      throw e;
     }
   }
 
@@ -338,7 +338,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
       }
       return ret;
     } catch (e) {
-      return e;
+      throw e;
     }
   }
   /**
@@ -475,15 +475,15 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     let body: string = await this.loadServlet({ m: "mod_data", p: "features-actionurl" })
     let names = this.getYltype(body);
     let form: { [key: string]: string } = {}
-    const { varaibles, events } = options;
+    const { variables, events } = options;
     if (events) {
       const events2 = new Set(events);
       names = names.filter((name) => events2.has(name as YealinkEvents))
     }
 
     let params = ''
-    if (varaibles) {
-      const values = [...varaibles].map((v: YealinkVariable) => `${v}=$${v}`).join('&');
+    if (variables) {
+      const values = [...variables].map((v: YealinkVariable) => `${v}=$${v}`).join('&');
       params = `${values}`;
     }
 

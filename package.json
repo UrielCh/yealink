@@ -1,6 +1,6 @@
 {
     "name": "yealink",
-    "version": "0.1.3",
+    "version": "0.2.0",
     "description": "control yealink phone with nodejs",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -14,35 +14,40 @@
         "watch": "tsc --watch -p .",
         "prepare": "npm run build"
     },
+    "bin": {
+        "yealink": "./bin/yealink"
+    },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/UrielCh/yealink.git"
     },
-    "author": "Chemouni Uriel",
+    "author": "Uriel Chemouni <uchemouni@gmail.com> (https://urielch.github.io/)",
     "license": "GPL-3.0-or-later",
     "bugs": {
         "url": "https://github.com/UrielCh/yealink/issues"
     },
     "homepage": "https://github.com/UrielCh/yealink#readme",
     "devDependencies": {
-        "@types/cheerio": "^0.22.29",
+        "@types/cheerio": "^0.22.30",
         "@types/crypto-js": "^3.1.47",
         "@types/ip-address": "^6.0.0",
         "@types/jsbn": "^1.2.29",
-        "@types/node": "^15.14.0",
-        "@types/request": "^2.48.5",
-        "@types/request-promise": "^4.1.47",
-        "typescript": "^4.3.5"
+        "@types/node": "^16.9.1",
+        "@types/request": "^2.48.7",
+        "@types/request-promise": "^4.1.48",
+        "typescript": "^4.4.3"
     },
     "dependencies": {
         "cheerio": "^1.0.0-rc.10",
+        "commander": "^8.2.0",
         "crypto-js": "^4.0.0",
         "get-random-values": "^1.2.2",
-        "ip-cidr": "^3.0.3",
+        "ip-cidr": "^3.0.4",
         "request": "^2.88.2",
         "request-promise": "^4.2.6"
     },
     "files": [
+        "bin",
         "dist",
         "js"
     ]
