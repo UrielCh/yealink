@@ -123,7 +123,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
   private objEncrypt = {
     rsa: "",
     key: "",
-    aes: { iv: '', mode: null as CryptoJS.Mode | null, padding: null as CryptoJS.Padding | null} as CryptoJS.CipherOption,
+    aes: { iv: '', mode: null as CryptoJS.Mode | null, padding: null as CryptoJS.Padding | null } as CryptoJS.CipherOption,
     data: { key: '', iv: '' }
   };
 
@@ -208,7 +208,7 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     return r.toString();
   }
 
-  public setSchema(schema: 'http'|'https') {
+  public setSchema(schema: 'http' | 'https') {
     if (schema == 'http') {
       this.schema = 'http';
     } else if (schema == 'https') {
@@ -234,13 +234,12 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     // RSA KEYS DATA MUST BE LOADED
     if (this.g_strToken) return;
     await this.phonetype();
-    let uri = `${this.schema}://${
-      this.ip
+    let uri = `${this.schema}://${this.ip
       }/servlet?m=mod_listener&p=login&q=login&Rajax=${Math.random()}`;
     this.InitEncrypt();
     const username = this.auth.user;
     const pwd = this.Encrypt(this.auth.pass as string);
-    const {key, iv} = this.objEncrypt.data;
+    const { key, iv } = this.objEncrypt.data;
     let q = "";
     let code = "";
     try {
@@ -496,10 +495,13 @@ export class Yealink extends EventEmitter implements YealinkEventEmitter {
     } else if (external_url) {
       if (~external_url.indexOf('?')) {
         external_url += '&'
-      } else  {
+      } else {
         external_url += '?'
       }
       names.forEach(n => form[n] = `${external_url}ev=${n}&${params}`);
+    } else {
+      // reset
+      names.forEach(n => form[n] = '');
     }
     await this.writeServlet({ m: 'mod_data', p: "features-actionurl" }, form);
   }
