@@ -2,6 +2,7 @@ import Yealink from "./Yealink";
 import YealinkVariable from "./YealintVariable";
 import { Command, Option } from 'commander';
 import { YealinkEvents } from ".";
+import pMap from "p-map";
 
 const program = new Command();
 const defaultVars = ['display_local', 'display_remote', 'calledNumber', 'call_id', 'callerID', 'mac', 'local', 'remote', 'active_user', 'active_host']
@@ -27,6 +28,7 @@ interface ScriptOptions {
     variables: string;
     events: string;
     reset: boolean;
+    concurency: string;
 }
 
 program.showHelpAfterError('(add --help for additional information)');
@@ -38,6 +40,7 @@ serverOpt.makeOptionMandatory(true)
 program.command('action-url') //  <ips...>
     .description('Update the action URL of a yealink')
     .option('-u, --user [user]', 'Phone username', 'admin')
+    .option('-C, --concurency [concurency]', 'number of concurent request', '3')
     .option('-p, --password [password]', 'Phone password', 'admin')
     .option('-e, --events [events]', 'select a subset of event separeted by coma (by default take them all)')
     .option('--reset', 'reset not updated events (can only be use with --events params)')
@@ -45,13 +48,14 @@ program.command('action-url') //  <ips...>
     .option('-v, variables <variables>', 'Variables to add to action url', defaultVars.join(','))
     .argument('<ips...>', 'One or more Yealink phone IP')
     .action(async (ips: string[], options: ScriptOptions, command: Command) => {
-        for (const ip of ips) {
+        let concurrency = Number(options.concurency);
+        pMap(ips, async (ip:string) => {
             try {
                 await configPhone(ip, options);
             } catch (e) {
                 console.error(`configuring phone :${ip} Failed:`, e);
             }
-        }
+        }, {concurrency})
     });
  
 program.parse(process.argv);

@@ -1,6 +1,6 @@
 {
     "name": "yealink",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "description": "control yealink phone with nodejs",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -43,6 +43,7 @@
         "crypto-js": "^4.0.0",
         "get-random-values": "^1.2.2",
         "ip-cidr": "^3.0.4",
+        "p-map": "^4.0.0",
         "request": "^2.88.2",
         "request-promise": "^4.2.6"
     },
